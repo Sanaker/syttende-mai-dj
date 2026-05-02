@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+  background: linear-gradient(180deg, #fff 0%, #f5f7fb 100%);
+}
+
+body {
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #0a0a0a;
+}
+
+@layer components {
+  .flag-stripe {
+    background: repeating-linear-gradient(
+      90deg,
+      #ba0c2f 0 24px,
+      #fff 24px 32px,
+      #00205b 32px 56px,
+      #fff 56px 64px
+    );
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 font-semibold
+      text-white bg-norway-red hover:bg-red-700 active:scale-[0.98] transition shadow-md
+      disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 font-semibold
+      text-norway-blue bg-white border border-norway-blue/20 hover:bg-norway-blue/5 transition
+      disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .card {
+    @apply rounded-2xl bg-white shadow-sm border border-black/5 p-3;
+  }
+}
