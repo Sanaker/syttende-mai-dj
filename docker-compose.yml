@@ -9,7 +9,7 @@ services:
     container_name: dj
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${HOST_PORT:-3017}:3000"
     environment:
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID}
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET}
