@@ -36,6 +36,26 @@ export async function POST(req: NextRequest) {
       patch.playlistId = parsed;
     }
   }
+  if (typeof body.secondaryQrName === "string") {
+    patch.secondaryQrName = body.secondaryQrName.trim().slice(0, 60) || "Ekstra QR";
+  }
+  if (typeof body.secondaryQrUrl === "string") {
+    const trimmed = body.secondaryQrUrl.trim();
+    if (trimmed === "") {
+      patch.secondaryQrUrl = "";
+    } else {
+      let parsed: URL;
+      try {
+        parsed = new URL(trimmed);
+      } catch {
+        return NextResponse.json({ error: "Ugyldig URL for ekstra QR" }, { status: 400 });
+      }
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        return NextResponse.json({ error: "Ekstra QR-URL må starte med http/https" }, { status: 400 });
+      }
+      patch.secondaryQrUrl = trimmed;
+    }
+  }
 
   if (!Object.keys(patch).length) {
     return NextResponse.json({ error: "Ingen gyldige felter" }, { status: 400 });

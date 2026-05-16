@@ -63,6 +63,8 @@ export type AppSettings = {
   cooldownSeconds: number;
   recentTrackTtlSeconds: number;
   playlistId: string; // Spotify playlist ID som vises i gjest-UI; tom = ingen
+  secondaryQrName: string;
+  secondaryQrUrl: string;
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -73,4 +75,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   cooldownSeconds: 300,
   recentTrackTtlSeconds: 7200,
   playlistId: "",
+  secondaryQrName: "Ekstra QR",
+  secondaryQrUrl: "",
 };

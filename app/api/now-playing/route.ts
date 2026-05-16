@@ -15,6 +15,8 @@ export async function GET() {
     return NextResponse.json({
       guestId,
       approvalRequired: settings.approvalRequired,
+      secondaryQrName: settings.secondaryQrName,
+      secondaryQrUrl: settings.secondaryQrUrl,
       nowPlaying: np
         ? {
             isPlaying: np.isPlaying,

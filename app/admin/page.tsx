@@ -35,6 +35,8 @@ type Settings = {
   cooldownSeconds: number;
   recentTrackTtlSeconds: number;
   playlistId: string;
+  secondaryQrName: string;
+  secondaryQrUrl: string;
 };
 
 type Blocked = { type: "track" | "artist"; id: string; label: string; blockedAt: number };
@@ -399,6 +401,22 @@ export default function AdminPage() {
             disabled={!settings || savingSettings}
             onCommit={(v) => updateSetting({ playlistId: v })}
           />
+          <TextRow
+            label="Ekstra QR-navn"
+            description="Visningsnavn pa QR-siden, f.eks. Disposable Camera"
+            value={settings?.secondaryQrName ?? "Ekstra QR"}
+            placeholder="Ekstra QR"
+            disabled={!settings || savingSettings}
+            onCommit={(v) => updateSetting({ secondaryQrName: v || "Ekstra QR" })}
+          />
+          <TextRow
+            label="Ekstra QR-lenke"
+            description="Lenken som ekstra QR-koden skal peke til. Tom = skjules pa QR-siden."
+            value={settings?.secondaryQrUrl ?? ""}
+            placeholder="https://..."
+            disabled={!settings || savingSettings}
+            onCommit={(v) => updateSetting({ secondaryQrUrl: v })}
+          />
           <ToggleRow
             label="Krev godkjenning"
             description={
@@ -686,6 +704,50 @@ export default function AdminPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+function TextRow({
+  label,
+  description,
+  value,
+  placeholder,
+  disabled,
+  onCommit,
+}: {
+  label: string;
+  description?: string;
+  value: string;
+  placeholder?: string;
+  disabled?: boolean;
+  onCommit: (v: string) => void;
+}) {
+  const [local, setLocal] = useState(value);
+  useEffect(() => setLocal(value), [value]);
+  const commit = () => {
+    const trimmed = local.trim();
+    if (trimmed === value) return;
+    onCommit(trimmed);
+  };
+  return (
+    <div className="flex flex-col gap-1">
+      <div>
+        <div className="font-medium">{label}</div>
+        {description && <div className="text-xs text-black/55">{description}</div>}
+      </div>
+      <input
+        type="text"
+        value={local}
+        placeholder={placeholder}
+        disabled={disabled}
+        onChange={(e) => setLocal(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        }}
+        className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm disabled:opacity-50"
+      />
+    </div>
   );
 }
 

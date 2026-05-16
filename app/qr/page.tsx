@@ -4,6 +4,8 @@ import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
 
 type NowPlayingPayload = {
+  secondaryQrName?: string;
+  secondaryQrUrl?: string;
   nowPlaying: {
     isPlaying: boolean;
     track: {
@@ -20,6 +22,7 @@ export default function QRPage() {
     process.env.NEXT_PUBLIC_BASE_URL ?? (typeof window !== "undefined" ? window.location.origin : "")
   );
   const [customUrl, setCustomUrl] = useState<string>("");
+  const [customName, setCustomName] = useState<string>("Ekstra QR");
   const [nowPlaying, setNowPlaying] = useState<NowPlayingPayload["nowPlaying"]>(null);
 
   useEffect(() => {
@@ -28,16 +31,8 @@ export default function QRPage() {
     const resolvedBase = baseEnv && baseEnv.length > 0 ? baseEnv : fallbackBase;
     setSiteUrl(resolvedBase);
 
-    const query = new URLSearchParams(window.location.search);
-    const queryCustom = query.get("custom");
     const customEnv = process.env.NEXT_PUBLIC_SECONDARY_QR_URL;
-    const resolvedCustom =
-      queryCustom && queryCustom.length > 0
-        ? queryCustom
-        : customEnv && customEnv.length > 0
-          ? customEnv
-          : "";
-    setCustomUrl(resolvedCustom);
+    if (customEnv && customEnv.length > 0) setCustomUrl(customEnv);
   }, []);
 
   useEffect(() => {
@@ -47,6 +42,12 @@ export default function QRPage() {
         if (!r.ok) return;
         const data = (await r.json()) as NowPlayingPayload;
         setNowPlaying(data.nowPlaying);
+        if (typeof data.secondaryQrName === "string" && data.secondaryQrName.trim()) {
+          setCustomName(data.secondaryQrName.trim());
+        }
+        if (typeof data.secondaryQrUrl === "string") {
+          setCustomUrl(data.secondaryQrUrl.trim());
+        }
       } catch {
         /* ignore */
       }
@@ -100,9 +101,6 @@ export default function QRPage() {
             <h2 className="text-xl font-semibold text-norway-blue text-center mb-2">
               DJ-side for spilleliste-kø
             </h2>
-            <p className="text-sm text-black/60 text-center mb-4">
-              Gjester scanner denne for å foreslå låter.
-            </p>
             {siteUrl ? (
               <>
                 <div className="p-4 bg-white border-4 border-norway-red rounded-2xl">
@@ -119,28 +117,17 @@ export default function QRPage() {
             )}
           </section>
 
-          <section className="rounded-2xl border border-black/10 p-5 flex flex-col items-center bg-white">
-            <h2 className="text-xl font-semibold text-norway-blue text-center mb-2">
-              Ekstra QR
-            </h2>
-            <p className="text-sm text-black/60 text-center mb-4">
-              Til valgfri lenke, f.eks. disposable camera.
-            </p>
-            {customUrl ? (
-              <>
-                <div className="p-4 bg-white border-4 border-norway-blue rounded-2xl">
-                  <QRCodeSVG value={customUrl} size={260} level="M" />
-                </div>
-                <p className="mt-4 text-xs text-black/50 break-all text-center">{customUrl}</p>
-              </>
-            ) : (
-              <div className="w-full rounded-xl border border-dashed border-black/20 p-5 text-sm text-black/55 text-center">
-                Sett <strong>NEXT_PUBLIC_SECONDARY_QR_URL</strong> eller åpne siden med
-                <br />
-                <strong>?custom=https://din-lenke.no</strong>
+          {customUrl && (
+            <section className="rounded-2xl border border-black/10 p-5 flex flex-col items-center bg-white">
+              <h2 className="text-xl font-semibold text-norway-blue text-center mb-2">
+                {customName}
+              </h2>
+              <div className="p-4 bg-white border-4 border-norway-blue rounded-2xl">
+                <QRCodeSVG value={customUrl} size={260} level="M" />
               </div>
-            )}
-          </section>
+              <p className="mt-4 text-xs text-black/50 break-all text-center">{customUrl}</p>
+            </section>
+          )}
         </div>
       </div>
       <p className="mt-6 text-white/90 text-sm drop-shadow">
