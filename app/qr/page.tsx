@@ -1,7 +1,7 @@
 "use client";
 
 import { QRCodeSVG } from "qrcode.react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type NowPlayingPayload = {
   secondaryQrName?: string;
@@ -12,10 +12,19 @@ type NowPlayingPayload = {
       title: string;
       artists: string;
       albumArt: string | null;
+      durationMs: number;
     } | null;
     device: { name: string } | null;
+    progressMs?: number;
   } | null;
 };
+
+function formatTime(ms: number) {
+  const total = Math.floor(ms / 1000);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
 
 export default function QRPage() {
   const [siteUrl, setSiteUrl] = useState<string>(
@@ -58,81 +67,169 @@ export default function QRPage() {
     return () => window.clearInterval(id);
   }, []);
 
-  return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-br from-norway-red via-white to-norway-blue">
-      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-5xl">
-        <div className="text-5xl mb-2">🇳🇴</div>
-        <h1 className="font-display text-4xl text-norway-blue text-center mb-1">
-          17. mai-DJ
-        </h1>
-        <p className="text-center text-black/60 mb-6">
-          Skann en av kodene under.
-        </p>
+  // Smooth realtime progress interpolation
+  const serverProgress = nowPlaying?.progressMs ?? 0;
+  const isPlaying = nowPlaying?.isPlaying ?? false;
+  const duration = nowPlaying?.track?.durationMs ?? 0;
+  const trackTitle = nowPlaying?.track?.title;
+  const baselineRef = useRef({ progress: 0, at: Date.now() });
+  const [displayProgress, setDisplayProgress] = useState(0);
 
-        <section className="rounded-2xl border border-black/10 p-4 mb-6 bg-norway-blue/5">
-          <h2 className="text-lg font-semibold text-norway-blue mb-2">Currently Playing</h2>
-          {nowPlaying?.track ? (
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border border-black/10 flex-shrink-0">
-                {nowPlaying.track.albumArt && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={nowPlaying.track.albumArt}
-                    alt="Album cover"
-                    className="w-full h-full object-cover"
-                  />
-                )}
+  useEffect(() => {
+    baselineRef.current = { progress: serverProgress, at: Date.now() };
+    setDisplayProgress(serverProgress);
+  }, [serverProgress, trackTitle]);
+
+  useEffect(() => {
+    if (!isPlaying || !duration) return;
+    const id = window.setInterval(() => {
+      const elapsed = Date.now() - baselineRef.current.at;
+      setDisplayProgress(Math.min(duration, baselineRef.current.progress + elapsed));
+    }, 250);
+    return () => window.clearInterval(id);
+  }, [isPlaying, duration, trackTitle]);
+
+  const progressPercent = nowPlaying?.track && duration
+    ? (displayProgress / duration) * 100
+    : 0;  return (
+    <main className="min-h-screen flex flex-col bg-gradient-to-br from-norway-red via-slate-100 to-norway-blue p-4 sm:p-6">
+      {/* Currently Playing Hero Section */}
+      <section className="mb-6 sm:mb-8 w-full">
+        {nowPlaying?.track ? (
+          <div 
+            className="relative rounded-3xl overflow-hidden shadow-2xl h-64 sm:h-80 group"
+          >
+            {/* Blurred background */}
+            <div 
+              className="absolute inset-0 rounded-3xl"
+              style={{
+                backgroundImage: nowPlaying.track.albumArt 
+                  ? `url(${nowPlaying.track.albumArt})`
+                  : undefined,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                filter: "blur(20px)",
+                zIndex: 0,
+              }}
+            />
+            
+            {/* Dark overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/90 z-10" />
+            
+            {/* Content */}
+            <div className="relative h-full flex flex-col justify-end p-6 sm:p-8 text-white z-20">
+              <div className="mb-4">
+                <p className="text-sm sm:text-base font-semibold text-white/80 uppercase tracking-wide">
+                  ▶ Spilles nå
+                </p>
               </div>
-              <div className="min-w-0">
-                <p className="font-medium text-black truncate">{nowPlaying.track.title}</p>
-                <p className="text-sm text-black/70 truncate">{nowPlaying.track.artists}</p>
-                {nowPlaying.device?.name && (
-                  <p className="text-xs text-black/55">Enhet: {nowPlaying.device.name}</p>
-                )}
+              
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2 leading-tight line-clamp-2">
+                {nowPlaying.track.title}
+              </h2>
+              
+              <p className="text-lg sm:text-xl text-white/90 mb-3 line-clamp-1">
+                {nowPlaying.track.artists}
+              </p>
+
+              {nowPlaying.device?.name && (
+                <p className="text-sm text-white/70 mb-4 flex items-center gap-2">
+                  <span>●</span> {nowPlaying.device.name}
+                </p>
+              )}
+
+              {/* Progress Bar */}
+              <div className="w-full">
+                <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-norway-red to-white rounded-full"
+                    style={{ width: `${progressPercent}%`, transition: "width 250ms linear" }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-white/60 mt-2">
+                  <span>{formatTime(displayProgress)}</span>
+                  <span>{formatTime(nowPlaying.track.durationMs)}</span>
+                </div>
               </div>
             </div>
-          ) : (
-            <p className="text-sm text-black/60">Ingen sang spilles akkurat nå.</p>
-          )}
-        </section>
+          </div>
+        ) : (
+          <div className="rounded-3xl bg-gradient-to-br from-slate-100 to-slate-200 p-8 sm:p-12 text-center shadow-lg">
+            <p className="text-xl sm:text-2xl text-norway-blue font-semibold mb-2">
+              Ingenting spilles akkurat nå
+            </p>
+            <p className="text-slate-600">
+              Når musikken starter, vises den her.
+            </p>
+          </div>
+        )}
+      </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <section className="rounded-2xl border border-black/10 p-5 flex flex-col items-center bg-white">
-            <h2 className="text-xl font-semibold text-norway-blue text-center mb-2">
-              DJ-side for spilleliste-kø
-            </h2>
+      {/* QR Codes Section */}
+      <section className="flex-1 flex flex-col items-center w-full max-w-6xl mx-auto">
+        <h3 className="text-white text-center text-lg sm:text-xl font-bold mb-6 drop-shadow-lg">
+          Skann en av kodene under
+        </h3>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+          {/* DJ-side QR */}
+          <div className="rounded-3xl bg-white shadow-2xl p-6 sm:p-8 flex flex-col items-center transform transition hover:shadow-xl">
+            <div className="w-full mb-4">
+              <h4 className="text-xl sm:text-2xl font-bold text-norway-blue text-center">
+                DJ-side
+              </h4>
+              <p className="text-sm text-slate-500 text-center mt-1">
+                For spilleliste-kø
+              </p>
+            </div>
+            
             {siteUrl ? (
               <>
-                <div className="p-4 bg-white border-4 border-norway-red rounded-2xl">
-                  <QRCodeSVG value={siteUrl} size={260} level="M" />
+                <div className="p-5 bg-gradient-to-br from-white to-slate-50 border-4 border-norway-red rounded-3xl shadow-lg animate-pulse-subtle">
+                  <QRCodeSVG value={siteUrl} size={240} level="M" />
                 </div>
-                <p className="mt-4 text-xs text-black/50 break-all text-center">{siteUrl}</p>
+                <p className="mt-4 text-xs text-slate-400 break-all text-center line-clamp-2">
+                  {siteUrl}
+                </p>
               </>
             ) : (
-              <div className="w-full rounded-xl border border-dashed border-black/20 p-5 text-sm text-black/55 text-center">
-                Kunne ikke finne base-URL automatisk.
+              <div className="w-full rounded-2xl border-2 border-dashed border-slate-300 p-6 text-sm text-slate-500 text-center">
+                Kunne ikke finne base-URL.
                 <br />
-                Sett <strong>NEXT_PUBLIC_BASE_URL</strong> og last siden pa nytt.
+                Sett <strong>NEXT_PUBLIC_BASE_URL</strong> og last siden på nytt.
               </div>
             )}
-          </section>
+          </div>
 
+          {/* Secondary QR */}
           {customUrl && (
-            <section className="rounded-2xl border border-black/10 p-5 flex flex-col items-center bg-white">
-              <h2 className="text-xl font-semibold text-norway-blue text-center mb-2">
-                {customName}
-              </h2>
-              <div className="p-4 bg-white border-4 border-norway-blue rounded-2xl">
-                <QRCodeSVG value={customUrl} size={260} level="M" />
+            <div className="rounded-3xl bg-white shadow-2xl p-6 sm:p-8 flex flex-col items-center transform transition hover:shadow-xl">
+              <div className="w-full mb-4">
+                <h4 className="text-xl sm:text-2xl font-bold text-norway-red text-center">
+                  {customName}
+                </h4>
+                <p className="text-sm text-slate-500 text-center mt-1">
+                  Engangskamera appen!
+                </p>
               </div>
-              <p className="mt-4 text-xs text-black/50 break-all text-center">{customUrl}</p>
-            </section>
+              
+              <div className="p-5 bg-gradient-to-br from-white to-slate-50 border-4 border-norway-blue rounded-3xl shadow-lg animate-pulse-subtle">
+                <QRCodeSVG value={customUrl} size={240} level="M" />
+              </div>
+              <p className="mt-4 text-xs text-slate-400 break-all text-center line-clamp-2">
+                {customUrl}
+              </p>
+            </div>
           )}
         </div>
+      </section>
+
+      {/* Footer */}
+      <div className="mt-8 text-center">
+        <p className="text-white text-xl sm:text-2xl font-bold drop-shadow-lg animate-wave">
+          Hipp hipp hurra!
+        </p>
       </div>
-      <p className="mt-6 text-white/90 text-sm drop-shadow">
-        Hipp hipp hurra!
-      </p>
     </main>
   );
 }

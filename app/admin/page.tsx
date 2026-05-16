@@ -334,7 +334,7 @@ export default function AdminPage() {
   if (!authed) {
     return (
       <main className="max-w-sm mx-auto p-6">
-        <h1 className="font-display text-2xl text-norway-blue mb-4">Vert-innlogging</h1>
+        <h1 className="font-bold text-2xl text-norway-blue mb-4">Vert-innlogging</h1>
         <input
           type="password"
           placeholder="Passord"
@@ -355,7 +355,7 @@ export default function AdminPage() {
     <main className="max-w-3xl mx-auto p-4 pb-24">
       <div className="flag-stripe h-2 rounded-full mb-3" />
       <div className="flex items-center justify-between mb-4">
-        <h1 className="font-display text-3xl text-norway-blue">Vert-dashboard</h1>
+        <h1 className="font-bold text-3xl text-norway-blue">Vert-dashboard</h1>
         <button className="btn-secondary" onClick={logout}>
           Logg ut
         </button>
@@ -593,7 +593,7 @@ export default function AdminPage() {
       </section>
 
       <section className="mb-6">
-        <h2 className="font-display text-xl text-norway-blue mb-2">
+        <h2 className="font-bold text-xl text-norway-blue mb-2">
           Pending forslag ({now?.pending.length ?? 0})
         </h2>
         {!now?.pending.length && <p className="text-sm text-black/50">Ingen forslag akkurat nå</p>}
@@ -639,7 +639,7 @@ export default function AdminPage() {
       </section>
 
       <section>
-        <h2 className="font-display text-xl text-norway-blue mb-2">
+        <h2 className="font-bold text-xl text-norway-blue mb-2">
           Blokkerte ({blocked.length})
         </h2>
         {!blocked.length && <p className="text-sm text-black/50">Ingenting blokkert</p>}

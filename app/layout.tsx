@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "17. mai DJ 🇳🇴",
+  title: "17. mai DJ",
   description: "Foreslå sanger til 17. mai-festen",
 };
 

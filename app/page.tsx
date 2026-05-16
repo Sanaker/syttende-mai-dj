@@ -31,6 +31,7 @@ type NowPayload = {
     isPlaying: boolean;
     track: Card | null;
     device: { name: string } | null;
+    progressMs?: number;
   } | null;
   queue: Card[];
   pending: PendingItem[];
@@ -219,12 +220,13 @@ export default function HomePage() {
   );
 
   return (
-    <main className="max-w-2xl mx-auto p-4 pb-24">
-      <Header />
+    <main className="min-h-screen bg-gradient-to-br from-norway-red via-slate-100 to-norway-blue">
+      <div className="max-w-2xl mx-auto p-4 pb-24">
+        <Header />
 
-      <NowPlaying now={now} />
+        <NowPlaying now={now} />
 
-      <Tabs tab={tab} setTab={setTab} pending={now?.pending.length ?? 0} />
+        <Tabs tab={tab} setTab={setTab} pending={now?.pending.length ?? 0} />
 
       {tab === "search" && (
         <section className="space-y-3">
@@ -234,26 +236,26 @@ export default function HomePage() {
             placeholder="Søk etter artist eller sang..."
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="w-full rounded-2xl border border-black/10 px-4 py-3 text-base shadow-sm
+            className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-base shadow-sm
               focus:outline-none focus:ring-2 focus:ring-norway-red/40"
           />
-          {searching && <p className="text-sm text-black/50">Søker…</p>}
+          {searching && <p className="text-sm text-white/80 drop-shadow">Søker…</p>}
           <div className="space-y-2">
             {results.map((r, i) => (
               <TrackRow key={`${r.id}-${i}`} card={r} onSuggest={suggest} busy={busy} />
             ))}
           </div>
           {!searching && q && results.length === 0 && (
-            <p className="text-sm text-black/50">Ingen treff (eller alle er blokkert)</p>
+            <p className="text-sm text-white/80 drop-shadow">Ingen treff (eller alle er blokkert)</p>
           )}
         </section>
       )}
 
       {tab === "playlist" && (
         <section className="space-y-2">
-          {!playlistLoaded && <p className="text-sm text-black/50">Laster spilleliste…</p>}
+          {!playlistLoaded && <p className="text-sm text-white/80 drop-shadow">Laster spilleliste…</p>}
           {playlistLoaded && playlist.length === 0 && (
-            <p className="text-sm text-black/50">
+            <p className="text-sm text-white/80 drop-shadow">
               Ingen spilleliste konfigurert. Verten kan sette en under <em>/admin</em>.
             </p>
           )}
@@ -267,7 +269,7 @@ export default function HomePage() {
         <section className="space-y-4">
           {now?.pending.length ? (
             <div>
-              <h2 className="font-display text-xl text-norway-blue mb-2">Venter på godkjenning</h2>
+              <h2 className="font-bold text-xl text-norway-blue mb-2">Venter på godkjenning</h2>
               <div className="space-y-2">
                 {now.pending.map((p) => (
                   <div key={p.id} className="card flex items-center gap-3">
@@ -302,7 +304,7 @@ export default function HomePage() {
           ) : null}
 
           <div>
-            <h2 className="font-display text-xl text-norway-blue mb-2">Spotify-kø</h2>
+            <h2 className="font-bold text-xl text-norway-blue mb-2">Spotify-kø</h2>
             {now?.queue.length ? (
               <div className="space-y-2">
                 {now.queue.map((c, i) => (
@@ -329,45 +331,122 @@ export default function HomePage() {
 
       {toast && <Toast msg={toast.msg} kind={toast.kind} />}
       {confetti && <Confetti />}
+      </div>
     </main>
   );
 }
 
 function Header() {
   return (
-    <header className="mb-4">
-      <div className="flag-stripe h-2 rounded-full mb-3" />
-      <h1 className="font-display text-3xl text-norway-blue">
-        <span className="animate-wave inline-block">🇳🇴</span> 17. mai-DJ
+    <header className="mb-6">
+      <h1 className="font-bold text-3xl text-white drop-shadow-lg">
+        17. mai-DJ
       </h1>
-      <p className="text-sm text-black/60">Foreslå sanger til festen — verten godkjenner.</p>
+      <p className="text-sm text-white/90 drop-shadow">Foreslå sanger til festen</p>
     </header>
   );
 }
 
 function NowPlaying({ now }: { now: NowPayload | null }) {
   const t = now?.nowPlaying?.track;
+  const serverProgress = now?.nowPlaying?.progressMs ?? 0;
+  const isPlaying = now?.nowPlaying?.isPlaying ?? false;
+  const trackId = t?.id;
+  const duration = t?.durationMs ?? 0;
+
+  // Interpolate progress locally for smooth realtime bar
+  const baselineRef = useRef({ progress: 0, at: Date.now() });
+  const [displayProgress, setDisplayProgress] = useState(0);
+
+  useEffect(() => {
+    baselineRef.current = { progress: serverProgress, at: Date.now() };
+    setDisplayProgress(serverProgress);
+  }, [serverProgress, trackId]);
+
+  useEffect(() => {
+    if (!isPlaying || !duration) return;
+    const id = window.setInterval(() => {
+      const elapsed = Date.now() - baselineRef.current.at;
+      setDisplayProgress(Math.min(duration, baselineRef.current.progress + elapsed));
+    }, 250);
+    return () => window.clearInterval(id);
+  }, [isPlaying, duration, trackId]);
+
   if (!t) {
     return (
-      <div className="card mb-4 text-sm text-black/50">
-        Ingen sang spiller akkurat nå
+      <div className="rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 p-6 mb-6 text-center shadow-lg">
+        <p className="text-lg text-norway-blue font-semibold">
+          Ingenting spilles akkurat nå
+        </p>
+        <p className="text-sm text-slate-600 mt-1">
+          Når musikken starter, vises den her.
+        </p>
       </div>
     );
   }
+
+  const progressPercent = now?.nowPlaying?.progressMs && t.durationMs
+    ? (displayProgress / t.durationMs) * 100
+    : 0;
+
+  const formatTime = (ms: number) => {
+    const total = Math.floor(ms / 1000);
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
   return (
-    <div className="card mb-4 flex items-center gap-3 bg-gradient-to-r from-norway-blue/5 to-norway-red/5">
-      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
-        {t.albumArt ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={t.albumArt} alt="" className="w-full h-full object-cover" />
-        ) : null}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-xs uppercase tracking-wider text-norway-red font-bold">
-          Nå spilles
+    <div className="relative rounded-2xl overflow-hidden shadow-xl mb-6 isolate">
+      {/* Blurred background */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          backgroundImage: t.albumArt ? `url(${t.albumArt})` : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          filter: "blur(20px)",
+          transform: "scale(1.1)",
+          zIndex: 0,
+        }}
+      />
+      
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/90 z-10" />
+      
+      {/* Content */}
+      <div className="relative flex flex-col justify-end p-5 pt-12 text-white z-20">
+        <p className="text-xs font-semibold text-white/80 uppercase tracking-wide mb-2">
+          Spilles nå
+        </p>
+        
+        <h3 className="text-lg font-bold mb-1 leading-tight line-clamp-2">
+          {t.title}
+        </h3>
+        
+        <p className="text-sm text-white/90 mb-2 line-clamp-2 leading-snug">
+          {t.artists}
+        </p>
+
+        {now.nowPlaying?.device?.name && (
+          <p className="text-xs text-white/70 mb-3">
+            ● {now.nowPlaying.device.name}
+          </p>
+        )}
+
+        {/* Progress Bar */}
+        <div className="w-full">
+          <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-norway-red to-white rounded-full"
+              style={{ width: `${progressPercent}%`, transition: "width 250ms linear" }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-white/60 mt-1">
+            <span>{formatTime(displayProgress)}</span>
+            <span>{formatTime(t.durationMs)}</span>
+          </div>
         </div>
-        <div className="font-semibold truncate">{t.title}</div>
-        <div className="text-sm text-black/60 truncate">{t.artists}</div>
       </div>
     </div>
   );
@@ -388,13 +467,13 @@ function Tabs({
     { id: "queue", label: "Kø", badge: pending || undefined },
   ];
   return (
-    <div className="flex gap-1 mb-4 bg-black/5 rounded-full p-1">
+    <div className="flex gap-1 mb-4 bg-white/80 backdrop-blur rounded-full p-1 shadow-lg">
       {items.map((i) => (
         <button
           key={i.id}
           onClick={() => setTab(i.id)}
           className={`flex-1 py-2 px-3 rounded-full text-sm font-semibold transition relative ${
-            tab === i.id ? "bg-white text-norway-blue shadow" : "text-black/60"
+            tab === i.id ? "bg-norway-blue text-white shadow" : "text-norway-blue/70 hover:text-norway-blue"
           }`}
         >
           {i.label}

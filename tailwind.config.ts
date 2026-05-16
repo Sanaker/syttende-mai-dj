@@ -24,10 +24,20 @@ const config: Config = {
           "0%": { transform: "scale(0.95)", opacity: "0" },
           "100%": { transform: "scale(1)", opacity: "1" },
         },
+        "pulse-subtle": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.95" },
+        },
+        glow: {
+          "0%, 100%": { boxShadow: "0 0 20px rgba(186, 12, 47, 0.5)" },
+          "50%": { boxShadow: "0 0 30px rgba(186, 12, 47, 0.8)" },
+        },
       },
       animation: {
         wave: "wave 4s ease-in-out infinite",
         pop: "pop 0.2s ease-out",
+        "pulse-subtle": "pulse-subtle 3s ease-in-out infinite",
+        glow: "glow 3s ease-in-out infinite",
       },
     },
   },

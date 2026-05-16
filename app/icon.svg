@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Rounded square background: Norwegian red -->
+  <rect width="64" height="64" rx="12" fill="#BA0C2F"/>
+  <!-- Norwegian flag cross (white outline + blue inner) -->
+  <rect x="0" y="24" width="64" height="16" fill="#ffffff"/>
+  <rect x="20" y="0" width="12" height="64" fill="#ffffff"/>
+  <rect x="0" y="28" width="64" height="8" fill="#00205B"/>
+  <rect x="22" y="0" width="8" height="64" fill="#00205B"/>
+  <!-- Musical note on the right field -->
+  <g fill="#ffffff">
+    <rect x="46" y="10" width="3" height="22" rx="1"/>
+    <ellipse cx="44" cy="32" rx="5" ry="4"/>
+  </g>
+</svg>
