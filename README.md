@@ -97,7 +97,18 @@ For oppdatering: `git pull && docker compose up -d --build`.
 
 - `/` — gjest-side (QR-koden peker hit)
 - `/admin` — vert-dashboard
-- `/qr` — fullskjerm QR-kode for TV/storskjerm
+- `/qr` — fullskjerm side med to QR-koder (DJ-side + valgfri ekstra-lenke)
+
+### Ekstra QR-kode (valgfri)
+
+Du kan vise en ekstra QR-kode på `/qr` til f.eks. disposable camera-app:
+
+- Fast oppsett via env:
+   - `NEXT_PUBLIC_SECONDARY_QR_URL=https://din-ekstra-lenke.no`
+- Midlertidig override via URL (praktisk på festdagen):
+   - `https://<ditt-domene>/qr?custom=https%3A%2F%2Fdin-ekstra-lenke.no`
+
+Hvis `custom` finnes i URL brukes den. Hvis ikke brukes `NEXT_PUBLIC_SECONDARY_QR_URL`.
 
 ## På festen
 
